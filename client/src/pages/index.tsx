@@ -1,11 +1,40 @@
 // importing google font for NextJS
+import { getJSONData } from '@/tools/Toolkit';
 import { Griffy } from 'next/font/google';
 const griffy = Griffy({weight: "400", subsets: ['latin']});
+import LoadingOverlay from '@/components/LoadingOverlay';
+import React, { useState } from 'react';
+
+import { Orders } from "@/tools/order.model";
 
 export default function Home() {
   // retrieve server sided script
   const RETRIEVE_SCRIPT:string = "https://www.seanmorrow.ca/_lessons/retrieveOrder.php";
+  const [loading, setLoading] = useState(false);
+  const [orders, setOrders] = useState<Orders | null>(null);
 
+  // --------------------------------------------------event handlers
+  // const onResponse = (data:Orders) => {
+  //   console.log(data);
+  // };
+
+  // const onError = (message:string) => {
+  //   console.log(`*** Error retrieving pizza order data :( | ${message}`);
+  // };
+
+
+  const getOrders= (e:any) => {
+    setLoading(true);
+    // fetch the data from the api
+    // getJSONData(RETRIEVE_SCRIPT, onResponse, onError);
+    getJSONData(RETRIEVE_SCRIPT, (data: Orders) => {
+      setOrders(data); // Set the retrieved orders
+      setLoading(false);
+    }, (message: string) => {
+      console.log(`*** Error retrieving pizza order data :( | ${message}`);
+      setLoading(false); // Hide loading overlay on error too
+    });
+  };
   
 
 
@@ -37,7 +66,7 @@ export default function Home() {
           <div className="text-accent text-3xl font-bold mb-2.5">Welcome loyal pizza dispatcher....</div>Click the &quot;Get Orders&quot; button below to view all current orders that need to be delivered.
           <div>
               <button 
-                className="bg-accent border-none rounded-md p-2.5 text-white hover:bg-greyContent mt-5">Get Orders</button>
+                className="bg-accent border-none rounded-md p-2.5 text-white hover:bg-greyContent mt-5" onClick={getOrders}>Get Orders</button>
           </div>
         </div>
         <div className="shrink-0 text-lg text-right text-greyContent hidden md:block">
@@ -51,11 +80,26 @@ export default function Home() {
       <div className="bg-greyAccent p-10">
 
         <div id="output" className="divide-dashed divide-y-2 divide-accent">
-
-          <>No orders retrieved...</>
+          {orders ? (
+            orders.orders.map(order => (
+              <div key={order.id}>
+                <div>Order ID: {order.id}</div>
+                <div>Name: {order.name}</div>
+                <div>Address: {order.address}</div>
+              </div>
+            ))
+          ) : (
+            <div>No orders retrieved...</div>
+          )}
 
         </div>
       </div>
+      <LoadingOverlay 
+      enabled={loading} 
+      bgColor="rgba(0, 0, 0, 0.5)" 
+      showSpinner={true} 
+      spinnerColor="#ffffff" 
+    />
     </main>
   );
 }
